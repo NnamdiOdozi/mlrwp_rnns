@@ -1,9 +1,14 @@
 {
   "permissions": {
     "allow": [
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "Read(//mnt/c/Users/nnamd/AppData/Roaming/Code/User/**)"
     ],
     "deny": [],
     "ask": []
-  }
+  },
+  "enabledMcpjsonServers": [
+    "github"
+  ],
+  "enableAllProjectMcpServers": true
 }
