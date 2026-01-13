@@ -1,0 +1,27 @@
+# instructions for using uv for new users
+
+pip install uv
+uv venv .venv
+source .venv/bin/activate
+
+uv pip compile pyproject.toml --output-file requirements.txt
+uv pip sync requirements.txt
+
+uv pip install -e
+
+ uv pip show watchdog # to check what version of watchdog is installed
+
+ python agents/policy_pulse_agent/agent.py
+
+ "uv tool install" for general libraries for cross project use
+
+# The official uv reference
+ https://docs.astral.sh/uv/reference/cli/#uv-auth-logout
+
+ 
+
+
+
+![alt text](./design_decisions/image.png)
+
+find -name "*.py" -not -path "./.venv/*" | xargs wc -l # this returns the number of lines of python code in the repo split by file 

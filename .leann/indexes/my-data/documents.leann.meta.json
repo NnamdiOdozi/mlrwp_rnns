@@ -1,0 +1,30 @@
+{
+  "version": "1.0",
+  "backend_name": "hnsw",
+  "embedding_model": "text-embedding-3-small",
+  "dimensions": 1536,
+  "backend_kwargs": {
+    "graph_degree": 32,
+    "complexity": 64,
+    "is_compact": true,
+    "is_recompute": true,
+    "num_threads": 1,
+    "distance_metric": "cosine"
+  },
+  "embedding_mode": "openai",
+  "passage_sources": [
+    {
+      "type": "jsonl",
+      "path": "documents.leann.passages.jsonl",
+      "index_path": "documents.leann.passages.idx",
+      "path_relative": "documents.leann.passages.jsonl",
+      "index_path_relative": "documents.leann.passages.idx"
+    }
+  ],
+  "embedding_options": {
+    "base_url": "https://api.openai.com/v1",
+    "api_key": "$OPENAI_API_KEY"
+  },
+  "is_compact": true,
+  "is_pruned": true
+}
