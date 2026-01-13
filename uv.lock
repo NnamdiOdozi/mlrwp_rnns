@@ -1429,6 +1429,79 @@ wheels = [
 ]
 
 [[package]]
+name = "mlir-wp"
+version = "0.1.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "chromium" },
+    { name = "exa-py" },
+    { name = "google-search-results" },
+    { name = "ipykernel" },
+    { name = "ipywidgets" },
+    { name = "jupyter" },
+    { name = "keras" },
+    { name = "langchain" },
+    { name = "langchain-community" },
+    { name = "matplotlib" },
+    { name = "multidict" },
+    { name = "nbformat" },
+    { name = "numpy" },
+    { name = "openai" },
+    { name = "openpyxl" },
+    { name = "pandas" },
+    { name = "pdfplumber" },
+    { name = "pinecone" },
+    { name = "pip" },
+    { name = "playwright" },
+    { name = "psutil" },
+    { name = "pypdf" },
+    { name = "pyreadline3" },
+    { name = "python-dotenv" },
+    { name = "requests" },
+    { name = "scikit-learn" },
+    { name = "tensorflow-cpu" },
+    { name = "torch", version = "2.6.0", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "sys_platform == 'darwin'" },
+    { name = "torch", version = "2.6.0+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "sys_platform != 'darwin'" },
+    { name = "tqdm" },
+    { name = "wandb" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "chromium", specifier = ">=0.0.0" },
+    { name = "exa-py", specifier = ">=1.0.7,<2.0.0" },
+    { name = "google-search-results", specifier = ">=2.4.2,<3.0.0" },
+    { name = "ipykernel", specifier = "==6.29.5" },
+    { name = "ipywidgets", specifier = "==8.1.7" },
+    { name = "jupyter", specifier = "==1.1.1" },
+    { name = "keras", specifier = ">=3.0.0,<4.0.0" },
+    { name = "langchain", specifier = ">=0.3.26,<1.0.0" },
+    { name = "langchain-community", specifier = ">=0.3.26,<=0.3.28" },
+    { name = "matplotlib", specifier = ">=3.3.0,<4.0.0" },
+    { name = "multidict", specifier = ">=6.1.0,<6.5.0" },
+    { name = "nbformat", specifier = "==5.10.4" },
+    { name = "numpy", specifier = ">=1.20.0,<2.0.0" },
+    { name = "openai", specifier = ">=2.14.0" },
+    { name = "openpyxl", specifier = ">=3.1.5" },
+    { name = "pandas", specifier = ">=2.3.3" },
+    { name = "pdfplumber", specifier = ">=0.11.9" },
+    { name = "pinecone", specifier = "==6.0.0" },
+    { name = "pip", specifier = "==25.1.1" },
+    { name = "playwright", specifier = ">=1.57.0" },
+    { name = "psutil", specifier = "==7.0.0" },
+    { name = "pypdf", specifier = ">=6.6.0" },
+    { name = "pyreadline3", specifier = "==3.5.4" },
+    { name = "python-dotenv", specifier = "==1.1.0" },
+    { name = "requests", specifier = "==2.32.4" },
+    { name = "requests", specifier = ">=2.32.0,<3.0.0" },
+    { name = "scikit-learn", specifier = ">=0.24.0,<1.4.0" },
+    { name = "tensorflow-cpu", specifier = ">=2.15.0,<2.18.0" },
+    { name = "torch", specifier = ">=2.2.0,<2.7.0", index = "https://download.pytorch.org/whl/cpu" },
+    { name = "tqdm", specifier = ">=4.50.0,<5.0.0" },
+    { name = "wandb" },
+]
+
+[[package]]
 name = "mpmath"
 version = "1.3.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1681,79 +1754,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/0d/04/02102b8d19fdcb009d72d622bb5781e8f3fae1646bf3e18c53d1bc8115b5/orjson-3.11.5-cp312-cp312-win32.whl", hash = "sha256:9172578c4eb09dbfcf1657d43198de59b6cef4054de385365060ed50c458ac98", size = 135255, upload-time = "2025-12-06T15:54:37.209Z" },
     { url = "https://files.pythonhosted.org/packages/d4/fb/f05646c43d5450492cb387de5549f6de90a71001682c17882d9f66476af5/orjson-3.11.5-cp312-cp312-win_amd64.whl", hash = "sha256:2b91126e7b470ff2e75746f6f6ee32b9ab67b7a93c8ba1d15d3a0caaf16ec875", size = 133252, upload-time = "2025-12-06T15:54:38.401Z" },
     { url = "https://files.pythonhosted.org/packages/dc/a6/7b8c0b26ba18c793533ac1cd145e131e46fcf43952aa94c109b5b913c1f0/orjson-3.11.5-cp312-cp312-win_arm64.whl", hash = "sha256:acbc5fac7e06777555b0722b8ad5f574739e99ffe99467ed63da98f97f9ca0fe", size = 126777, upload-time = "2025-12-06T15:54:39.515Z" },
-]
-
-[[package]]
-name = "paaia-coding"
-version = "0.1.0"
-source = { virtual = "." }
-dependencies = [
-    { name = "chromium" },
-    { name = "exa-py" },
-    { name = "google-search-results" },
-    { name = "ipykernel" },
-    { name = "ipywidgets" },
-    { name = "jupyter" },
-    { name = "keras" },
-    { name = "langchain" },
-    { name = "langchain-community" },
-    { name = "matplotlib" },
-    { name = "multidict" },
-    { name = "nbformat" },
-    { name = "numpy" },
-    { name = "openai" },
-    { name = "openpyxl" },
-    { name = "pandas" },
-    { name = "pdfplumber" },
-    { name = "pinecone" },
-    { name = "pip" },
-    { name = "playwright" },
-    { name = "psutil" },
-    { name = "pypdf" },
-    { name = "pyreadline3" },
-    { name = "python-dotenv" },
-    { name = "requests" },
-    { name = "scikit-learn" },
-    { name = "tensorflow-cpu" },
-    { name = "torch", version = "2.6.0", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "sys_platform == 'darwin'" },
-    { name = "torch", version = "2.6.0+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "sys_platform != 'darwin'" },
-    { name = "tqdm" },
-    { name = "wandb" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "chromium", specifier = ">=0.0.0" },
-    { name = "exa-py", specifier = ">=1.0.7,<2.0.0" },
-    { name = "google-search-results", specifier = ">=2.4.2,<3.0.0" },
-    { name = "ipykernel", specifier = "==6.29.5" },
-    { name = "ipywidgets", specifier = "==8.1.7" },
-    { name = "jupyter", specifier = "==1.1.1" },
-    { name = "keras", specifier = ">=3.0.0,<4.0.0" },
-    { name = "langchain", specifier = ">=0.3.26,<1.0.0" },
-    { name = "langchain-community", specifier = ">=0.3.26,<=0.3.28" },
-    { name = "matplotlib", specifier = ">=3.3.0,<4.0.0" },
-    { name = "multidict", specifier = ">=6.1.0,<6.5.0" },
-    { name = "nbformat", specifier = "==5.10.4" },
-    { name = "numpy", specifier = ">=1.20.0,<2.0.0" },
-    { name = "openai", specifier = ">=2.14.0" },
-    { name = "openpyxl", specifier = ">=3.1.5" },
-    { name = "pandas", specifier = ">=2.3.3" },
-    { name = "pdfplumber", specifier = ">=0.11.9" },
-    { name = "pinecone", specifier = "==6.0.0" },
-    { name = "pip", specifier = "==25.1.1" },
-    { name = "playwright", specifier = ">=1.57.0" },
-    { name = "psutil", specifier = "==7.0.0" },
-    { name = "pypdf", specifier = ">=6.6.0" },
-    { name = "pyreadline3", specifier = "==3.5.4" },
-    { name = "python-dotenv", specifier = "==1.1.0" },
-    { name = "requests", specifier = "==2.32.4" },
-    { name = "requests", specifier = ">=2.32.0,<3.0.0" },
-    { name = "scikit-learn", specifier = ">=0.24.0,<1.4.0" },
-    { name = "tensorflow-cpu", specifier = ">=2.15.0,<2.18.0" },
-    { name = "torch", specifier = ">=2.2.0,<2.7.0", index = "https://download.pytorch.org/whl/cpu" },
-    { name = "tqdm", specifier = ">=4.50.0,<5.0.0" },
-    { name = "wandb" },
 ]
 
 [[package]]
