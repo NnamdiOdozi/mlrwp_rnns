@@ -1,14 +1,77 @@
 {
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "env": {
+    "PATH": "/home/nodozi/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH",
+    "EDITOR": "nano",
+    "VISUAL": "nano"
+  },
   "permissions": {
+    "defaultMode": "bypassPermissions",
     "allow": [
       "Bash(cd:*)",
-      "Read(//mnt/c/Users/nnamd/AppData/Roaming/Code/User/**)"
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(echo:*)",
+      "Bash(cp:*)",
+      "Bash(open:*)",
+      "Bash(grep:*)",
+      "Bash(chmod:*)",
+      "Bash(file:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(pwd:*)",
+      "Bash(mkdir:*)",
+      "Bash(wc:*)",
+      "Bash(which:*)",
+      "Bash(touch:*)",
+      "Bash(diff:*)",
+      "Bash(test:*)",
+      "Bash(set:*)",
+      "Bash(sh -c 'cd:*)",
+      "Bash(sh -c 'ls:*)",
+      "Bash(sh -c 'cat:*)",
+      "Bash(sh -c 'echo:*)",
+      "Bash(sh -c 'cp:*)",
+      "Bash(sh -c 'open:*)",
+      "Bash(sh -c 'grep:*)",
+      "Bash(sh -c 'chmod:*)",
+      "Bash(sh -c 'file:*)",
+      "Bash(sh -c 'head:*)",
+      "Bash(sh -c 'tail:*)",
+      "Bash(sh -c 'pwd:*)",
+      "Bash(sh -c 'mkdir:*)",
+      "Bash(sh -c 'wc:*)",
+      "Bash(sh -c 'which:*)",
+      "Bash(sh -c 'touch:*)",
+      "Bash(sh -c 'diff:*)",
+      "Bash(sh -c 'test:*)",
+      "Bash(sh -c 'set:*)",
+      "Read(//mnt/c/Users/nnamd/AppData/Roaming/Code/User/**)",
+      "Read(/home/nodozi/projects/**)"
     ],
     "deny": [],
     "ask": []
   },
   "enabledMcpjsonServers": [
-    "github"
+    "github",
+    "markitdown",
+    "playwright",
+    "filesystem"
   ],
-  "enableAllProjectMcpServers": true
+  "enableAllProjectMcpServers": true,
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "set -a && . /home/nodozi/projects/mlir_wp/.env.claude && set +a"
+          }
+        ]
+      }
+    ]
+  }
+                                                                                                                                                                                                                                                                                     
+                                                                                                                                                                                                                                                   
+            
 }

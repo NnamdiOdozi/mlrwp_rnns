@@ -132,6 +132,8 @@ celerybeat.pid
 
 # Environments
 .env
+.env.claude
+.env.github
 .venv
 env/
 venv/
@@ -196,3 +198,8 @@ cython_debug/
 # logs
 embedding_logs/
 embedding_logs
+
+# Batch processing outputs and temporary files
+dw_batch_output/
+data/converted_for_batch/
+.claude/skills/data/

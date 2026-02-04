@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "github": {
+      "type": "stdio",
+      "command": "bash",
+      "args": ["-c", "cd /home/nodozi/projects/mlir_wp && eval \"$(direnv export bash)\" && exec npx -y @modelcontextprotocol/server-github"]
+    }
+  }
+}
