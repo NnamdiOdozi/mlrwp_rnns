@@ -1,1 +1,0 @@
-Extract all text from this image. Transcribe exactly what you see written, preserving line breaks and formatting where possible. If there are multiple columns or sections, indicate the structure clearly.

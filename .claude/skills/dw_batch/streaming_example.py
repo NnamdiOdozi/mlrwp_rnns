@@ -38,7 +38,7 @@ def streaming_chat_completion(prompt: str, model: str = None):
 
     Args:
         prompt: User message to send
-        model: Model to use (defaults to DOUBLEWORD_MODEL from .env)
+        model: Model to use (defaults to DOUBLEWORD_MODEL from .env.dw)
 
     Yields:
         str: Token chunks as they're generated
@@ -88,7 +88,7 @@ def non_streaming_chat_completion(prompt: str, model: str = None):
 
     Args:
         prompt: User message to send
-        model: Model to use (defaults to DOUBLEWORD_MODEL from .env)
+        model: Model to use (defaults to DOUBLEWORD_MODEL from .env.dw)
 
     Returns:
         str: Complete response text
@@ -141,7 +141,7 @@ if __name__ == "__main__":
         list(streaming_chat_completion(test_prompt))
     except Exception as e:
         print(f"Error: {e}")
-        print("\nNote: Ensure DOUBLEWORD_AUTH_TOKEN is set in .env")
+        print("\nNote: Ensure DOUBLEWORD_AUTH_TOKEN is set in .env.dw")
         sys.exit(1)
 
     print("\n")

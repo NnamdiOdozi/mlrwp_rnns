@@ -13,7 +13,7 @@ For advanced scenarios, generate custom code. See SKILL.md.
 
 CONFIGURATION:
 - Edit prompt.txt for your task instructions
-- Set DOUBLEWORD_MODEL in .env (default: Qwen3-VL-235B)
+- Set DOUBLEWORD_MODEL in .env.dw (default: Qwen3-VL-235B)
 - Adjust MAX_TOKENS based on expected output length
 - Use --extensions to filter file types
 
@@ -30,8 +30,44 @@ import os
 import argparse
 from pathlib import Path
 import glob
+import tomllib
+import hashlib
 from dotenv import load_dotenv
 from datetime import datetime
+import sys
+
+# Load configuration from config.toml and .env.dw
+def load_config():
+    """Load config from dw_batch/config.toml and merge with .env.dw secrets."""
+    # Load TOML config (non-secrets)
+    config_path = Path(__file__).parent / 'config.toml'
+    if not config_path.exists():
+        print(f"Error: Configuration file not found: {config_path}")
+        print("Please ensure config.toml exists")
+        sys.exit(1)
+
+    with open(config_path, 'rb') as f:
+        config = tomllib.load(f)
+
+    # Load .env.dw for secrets
+    env_path = Path(__file__).parent / '.env.dw'
+    load_dotenv(dotenv_path=env_path)
+
+    # Check for required secret
+    auth_token = os.getenv('DOUBLEWORD_AUTH_TOKEN')
+    if not auth_token:
+        print("="*60)
+        print("ERROR: DOUBLEWORD_AUTH_TOKEN not found")
+        print("="*60)
+        print("Please ensure you have:")
+        print("1. Created .env.dw file from .env.dw.sample")
+        print("2. Added your DOUBLEWORD_AUTH_TOKEN to .env.dw")
+        print("="*60)
+        sys.exit(1)
+
+    return config, auth_token
+
+config, auth_token = load_config()
 
 # Parse command line arguments
 parser = argparse.ArgumentParser(
@@ -72,8 +108,8 @@ parser.add_argument(
 parser.add_argument(
     '--output-dir',
     metavar='DIR',
-    default='../../dw_batch_output',
-    help='Output directory for results (default: ../../dw_batch_output)'
+    required=True,
+    help='Output directory for results (REQUIRED - agent must pass absolute path to project root)'
 )
 parser.add_argument(
     '--logs-dir',
@@ -85,28 +121,44 @@ parser.add_argument(
     action='store_true',
     help='Estimate costs without creating batch file (recommended for large jobs)'
 )
+parser.add_argument(
+    '--skip-existing',
+    action='store_true',
+    help='Skip files that already have output summaries (opt-in, checks filename + prompt hash)'
+)
+parser.add_argument(
+    '--force',
+    action='store_true',
+    help='Force batch creation even if cost thresholds are exceeded (use with caution)'
+)
 
 args = parser.parse_args()
-
-# Load environment variables
-load_dotenv()
 
 # Read prompt template
 with open('prompt.txt', 'r') as f:
     prompt_template = f.read()
 
-# Substitute word count from environment variable (default to 2000)
-word_count = os.getenv('SUMMARY_WORD_COUNT', '2000')
+# Substitute word count from config
+word_count = str(config['output']['summary_word_count'])
 prompt_template = prompt_template.replace('{WORD_COUNT}', word_count)
 
-# Print environment variables being used
+# Compute prompt hash for skip-existing check
+prompt_hash = hashlib.md5(prompt_template.encode()).hexdigest()[:8]
+
+# Get config values
+model = config['models']['default_model']
+max_tokens = config['output']['max_tokens']
+chat_endpoint = config['api']['chat_completions_endpoint']
+
+# Print configuration being used
 print("="*60)
 print("BATCH REQUEST CONFIGURATION")
 print("="*60)
 print(f"Prompt template: prompt.txt")
-print(f"Model: {os.getenv('DOUBLEWORD_MODEL', 'Qwen/Qwen3-VL-235B-A22B-Instruct-FP8')}")
-print(f"Max tokens: {os.getenv('MAX_TOKENS', '5000')}")
+print(f"Model: {model}")
+print(f"Max tokens: {max_tokens}")
 print(f"Word count target: {word_count}")
+print(f"Auth token: ...{auth_token[-4:]}")
 print("="*60)
 print()
 
@@ -145,6 +197,41 @@ else:
 if not all_files:
     print("No files found to process. Exiting.")
     exit(0)
+
+# Skip-existing setup
+if args.skip_existing:
+    print("\n" + "="*60)
+    print("⚠️  SKIP-EXISTING MODE ENABLED")
+    print("="*60)
+    print("This will skip files that already have output summaries.")
+    print("Files are matched by: filename + prompt hash")
+    print(f"Current prompt hash: {prompt_hash}")
+    print()
+    print("⚠️  WARNING: Use this carefully!")
+    print("  - If you changed the prompt, old outputs may be stale")
+    print("  - Prompt hash changes = all files reprocessed")
+    print("  - This is opt-in to avoid accidental re-runs")
+    print("="*60)
+    print()
+
+    # Determine output directory to check for existing files
+    output_dir = Path(args.output_dir)
+
+    # Find existing summary files
+    existing_summaries = {}
+    if output_dir.exists():
+        for summary_file in output_dir.glob('*_summary_*.md'):
+            # Extract base filename (everything before _summary_)
+            base_name = summary_file.stem.split('_summary_')[0]
+            existing_summaries[base_name] = summary_file
+
+        if existing_summaries:
+            print(f"Found {len(existing_summaries)} existing summary file(s) in {output_dir}")
+        else:
+            print(f"No existing summaries found in {output_dir}")
+    else:
+        print(f"Output directory {output_dir} does not exist yet")
+    print()
 
 # Detect what file types we actually have
 detected_extensions = set(Path(f).suffix.lower() for f in all_files)
@@ -297,6 +384,16 @@ def extract_from_csv_tsv(file_path):
 for idx, file_path in enumerate(all_files, 1):
     print(f"[{idx}/{len(all_files)}] Processing {file_path}...")
 
+    # Check if we should skip this file (if --skip-existing enabled)
+    if args.skip_existing:
+        file_stem = Path(file_path).stem
+        # Sanitize filename same way as custom_id generation
+        safe_filename = file_stem.replace('%', '_').replace(' ', '_').replace('&', 'and')[:55]
+
+        if safe_filename in existing_summaries:
+            print(f"  ⏭️  Skipped (existing summary: {existing_summaries[safe_filename].name})")
+            continue
+
     text = None
     pages = 0
     extraction_method = None
@@ -379,16 +476,16 @@ for idx, file_path in enumerate(all_files, 1):
     request = {
         "custom_id": f"summary-{safe_filename}",
         "method": "POST",
-        "url": os.getenv('CHAT_COMPLETIONS_ENDPOINT', '/v1/chat/completions'),
+        "url": chat_endpoint,
         "body": {
-            "model": os.getenv('DOUBLEWORD_MODEL', 'Qwen/Qwen3-VL-235B-A22B-Instruct-FP8'),
+            "model": model,
             "messages": [
                 {
                     "role": "user",
                     "content": f"{prompt_template}\n\nDocument text:\n{text}"
                 }
             ],
-            "max_tokens": int(os.getenv('MAX_TOKENS', '5000'))
+            "max_tokens": max_tokens
         }
     }
     requests.append(request)
@@ -398,9 +495,6 @@ for idx, file_path in enumerate(all_files, 1):
 # ============================================================================
 
 if args.dry_run:
-    model = os.getenv('DOUBLEWORD_MODEL', 'Qwen/Qwen3-VL-235B-A22B-Instruct-FP8')
-    max_tokens = int(os.getenv('MAX_TOKENS', '5000'))
-
     # Rough token estimates (4 chars ≈ 1 token for English text)
     estimated_input_tokens = total_input_chars // 4
     estimated_output_tokens = len(requests) * max_tokens
@@ -420,13 +514,24 @@ if args.dry_run:
     # Simple estimate: same rate for input/output (conservative)
     estimated_cost = ((estimated_input_tokens + estimated_output_tokens) / 1_000_000) * cost_per_1m
 
+    completion_window = config['batch']['completion_window']
+
+    # Check cost thresholds (unless --force flag is used)
+    max_input_tokens = config['safety']['max_input_tokens']
+    max_output_tokens = config['safety']['max_output_tokens']
+
+    threshold_exceeded = (
+        estimated_input_tokens > max_input_tokens or
+        estimated_output_tokens > max_output_tokens
+    )
+
     print("\n" + "="*60)
     print("DRY RUN - COST ESTIMATION")
     print("="*60)
     print(f"Files to process: {len(requests)}")
     print(f"Files failed/skipped: {len(failed_files)}")
     print(f"Model: {model_display}")
-    print(f"Completion window: {os.getenv('COMPLETION_WINDOW', '1h')}")
+    print(f"Completion window: {completion_window}")
     print()
     print(f"Estimated input tokens: ~{estimated_input_tokens:,}")
     print(f"Max output tokens: {estimated_output_tokens:,} ({len(requests)} × {max_tokens})")
@@ -439,9 +544,98 @@ if args.dry_run:
     print("  - Output cost assumes MAX_TOKENS per file (worst case)")
     print("  - Actual costs may be lower if responses are shorter")
     print("="*60)
+
+    # Check thresholds and warn if exceeded
+    if threshold_exceeded and not args.force:
+        print("\n" + "!"*60)
+        print("⚠️  COST THRESHOLD EXCEEDED - REVIEW REQUIRED")
+        print("!"*60)
+        print("Safety thresholds from config.toml:")
+        print(f"  Max input tokens: {max_input_tokens:,}")
+        print(f"  Max output tokens: {max_output_tokens:,}")
+        print()
+        print("Your batch exceeds these limits:")
+        if estimated_input_tokens > max_input_tokens:
+            print(f"  ✗ Input tokens: {estimated_input_tokens:,} (exceeds {max_input_tokens:,})")
+        else:
+            print(f"  ✓ Input tokens: {estimated_input_tokens:,} (within limit)")
+        if estimated_output_tokens > max_output_tokens:
+            print(f"  ✗ Output tokens: {estimated_output_tokens:,} (exceeds {max_output_tokens:,})")
+        else:
+            print(f"  ✓ Output tokens: {estimated_output_tokens:,} (within limit)")
+        print()
+        print("⚠️  RECOMMENDED ACTIONS:")
+        print("  1. Reduce file count (use --files to select subset)")
+        print("  2. Lower MAX_TOKENS in config.toml")
+        print("  3. Use smaller model (Qwen3-VL-30B instead of 235B)")
+        print("  4. Split into multiple smaller batches")
+        print()
+        print("To proceed anyway, add --force flag (use with caution)")
+        print("="*60)
+        sys.exit(1)
+    elif threshold_exceeded and args.force:
+        print("\n" + "⚠️ "*30)
+        print("WARNING: Cost thresholds exceeded but proceeding due to --force flag")
+        print(f"  Input tokens: {estimated_input_tokens:,} (limit: {max_input_tokens:,})")
+        print(f"  Output tokens: {estimated_output_tokens:,} (limit: {max_output_tokens:,})")
+        print("⚠️ "*30)
+
     print("\nTo proceed with batch creation, remove --dry-run flag")
     print("="*60)
     sys.exit(0)
+
+# ============================================================================
+# CHECK COST THRESHOLDS (NON-DRY-RUN MODE)
+# ============================================================================
+
+# Calculate token estimates for threshold check
+estimated_input_tokens = total_input_chars // 4
+estimated_output_tokens = len(requests) * max_tokens
+
+# Check safety thresholds
+max_input_tokens = config['safety']['max_input_tokens']
+max_output_tokens = config['safety']['max_output_tokens']
+
+threshold_exceeded = (
+    estimated_input_tokens > max_input_tokens or
+    estimated_output_tokens > max_output_tokens
+)
+
+if threshold_exceeded and not args.force:
+    print("\n" + "!"*60)
+    print("⚠️  COST THRESHOLD EXCEEDED - ABORTING")
+    print("!"*60)
+    print("Safety thresholds from config.toml:")
+    print(f"  Max input tokens: {max_input_tokens:,}")
+    print(f"  Max output tokens: {max_output_tokens:,}")
+    print()
+    print("Your batch exceeds these limits:")
+    if estimated_input_tokens > max_input_tokens:
+        print(f"  ✗ Input tokens: {estimated_input_tokens:,} (exceeds {max_input_tokens:,})")
+    else:
+        print(f"  ✓ Input tokens: {estimated_input_tokens:,} (within limit)")
+    if estimated_output_tokens > max_output_tokens:
+        print(f"  ✗ Output tokens: {estimated_output_tokens:,} (exceeds {max_output_tokens:,})")
+    else:
+        print(f"  ✓ Output tokens: {estimated_output_tokens:,} (within limit)")
+    print()
+    print("⚠️  RECOMMENDED ACTIONS:")
+    print("  1. Run with --dry-run first to estimate costs")
+    print("  2. Reduce file count (use --files to select subset)")
+    print("  3. Lower MAX_TOKENS in config.toml")
+    print("  4. Use smaller model (Qwen3-VL-30B instead of 235B)")
+    print("  5. Split into multiple smaller batches")
+    print()
+    print("To proceed anyway, add --force flag (use with caution)")
+    print("="*60)
+    sys.exit(1)
+elif threshold_exceeded and args.force:
+    print("\n" + "⚠️ "*30)
+    print("WARNING: Cost thresholds exceeded but proceeding due to --force flag")
+    print(f"  Input tokens: {estimated_input_tokens:,} (limit: {max_input_tokens:,})")
+    print(f"  Output tokens: {estimated_output_tokens:,} (limit: {max_output_tokens:,})")
+    print("⚠️ "*30)
+    print()
 
 # ============================================================================
 # SAVE BATCH REQUEST FILE TO LOGS FOLDER
@@ -469,10 +663,23 @@ print(f"\nExtraction methods used:")
 for method, count in sorted(extraction_stats.items()):
     print(f"  {method}: {count} files")
 
+# Log failed files to error log if any
 if failed_files:
+    error_log_file = logs_dir / f'batch_errors_{timestamp}.log'
+    with open(error_log_file, 'w') as f:
+        f.write(f"Batch Creation Error Log\n")
+        f.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+        f.write(f"Total files failed: {len(failed_files)}\n")
+        f.write(f"{'='*60}\n\n")
+        for path, reason in failed_files:
+            f.write(f"File: {path}\n")
+            f.write(f"Reason: {reason}\n")
+            f.write(f"{'-'*60}\n")
+
     print(f"\n⚠ Failed to process {len(failed_files)} files:")
     for path, reason in failed_files:
         print(f"  - {Path(path).name}: {reason}")
+    print(f"\n✓ Error details saved to: {error_log_file}")
 
 print(f"\n{'='*60}")
 print("NEXT STEPS:")

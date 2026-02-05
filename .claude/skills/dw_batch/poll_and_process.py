@@ -7,8 +7,42 @@ import time
 import subprocess
 import argparse
 from pathlib import Path
+import tomllib
 from openai import OpenAI
 from dotenv import load_dotenv
+
+# Load configuration from config.toml and .env.dw
+def load_config():
+    """Load config from dw_batch/config.toml and merge with .env.dw secrets."""
+    # Load TOML config (non-secrets)
+    config_path = Path(__file__).parent / 'config.toml'
+    if not config_path.exists():
+        print(f"Error: Configuration file not found: {config_path}")
+        print("Please ensure config.toml exists")
+        sys.exit(1)
+
+    with open(config_path, 'rb') as f:
+        config = tomllib.load(f)
+
+    # Load .env.dw for secrets
+    env_path = Path(__file__).parent / ".env.dw"
+    load_dotenv(dotenv_path=env_path)
+
+    # Check for required secret
+    auth_token = os.getenv('DOUBLEWORD_AUTH_TOKEN')
+    if not auth_token:
+        print("="*60)
+        print("ERROR: DOUBLEWORD_AUTH_TOKEN not found")
+        print("="*60)
+        print("Please ensure you have:")
+        print("1. Created .env.dw file from .env.dw.sample")
+        print("2. Added your DOUBLEWORD_AUTH_TOKEN to .env.dw")
+        print("="*60)
+        sys.exit(1)
+
+    return config, auth_token
+
+config, auth_token = load_config()
 
 # Parse command line arguments
 parser = argparse.ArgumentParser(
@@ -17,8 +51,8 @@ parser = argparse.ArgumentParser(
 parser.add_argument(
     '--output-dir',
     metavar='DIR',
-    default='../../dw_batch_output',
-    help='Output directory (default: ../../dw_batch_output)'
+    required=True,
+    help='Output directory (REQUIRED - agent must pass absolute path to project root)'
 )
 parser.add_argument(
     '--logs-dir',
@@ -28,37 +62,15 @@ parser.add_argument(
 
 args = parser.parse_args()
 
-# Load environment variables
-load_dotenv()
-
-# Security preflight check - verify required environment variables
-required_vars = ['DOUBLEWORD_AUTH_TOKEN', 'DOUBLEWORD_BASE_URL']
-missing_vars = [var for var in required_vars if not os.getenv(var)]
-
-if missing_vars:
-    print("="*60)
-    print("ERROR: Missing required environment variables")
-    print("="*60)
-    for var in missing_vars:
-        print(f"  ❌ {var}")
-    print()
-    print("Setup instructions:")
-    print("  1. Copy .env.sample to .env")
-    print("  2. Edit .env and add your DOUBLEWORD_AUTH_TOKEN")
-    print("  3. Ensure .env is in the same directory as this script")
-    print()
-    print("SECURITY: Never commit .env to git - it's in .gitignore")
-    print("="*60)
-    sys.exit(1)
+# Get config values
+base_url = config['api']['base_url']
+polling_interval = config['batch']['polling_interval']
 
 # Initialize client
 client = OpenAI(
-    api_key=os.environ['DOUBLEWORD_AUTH_TOKEN'],
-    base_url=os.environ['DOUBLEWORD_BASE_URL']
+    api_key=auth_token,
+    base_url=base_url
 )
-
-# Get polling interval from environment variable (default: 60 seconds)
-POLLING_INTERVAL = int(os.environ.get('POLLING_INTERVAL', '60'))
 
 # Determine output and logs directories
 output_dir = Path(args.output_dir)
@@ -87,7 +99,7 @@ print(f"Output directory: {output_dir.resolve()}")
 print(f"Logs directory: {logs_dir.resolve()}")
 print(f"Batch ID file: {latest_batch_id_file}")
 print(f"Batch ID: {batch_id}")
-print(f"Polling interval: {POLLING_INTERVAL}s")
+print(f"Polling interval: {polling_interval}s")
 print("="*60)
 print("\nPress Ctrl+C to stop polling\n")
 
@@ -132,7 +144,7 @@ try:
             break
 
         # Wait before next check
-        time.sleep(POLLING_INTERVAL)
+        time.sleep(polling_interval)
 
 except KeyboardInterrupt:
     print("\n\nPolling stopped by user")

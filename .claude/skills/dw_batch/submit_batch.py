@@ -7,8 +7,42 @@ import glob
 import argparse
 from pathlib import Path
 from datetime import datetime
+import tomllib
 from openai import OpenAI
 from dotenv import load_dotenv
+
+# Load configuration from config.toml and .env.dw
+def load_config():
+    """Load config from dw_batch/config.toml and merge with .env.dw secrets."""
+    # Load TOML config (non-secrets)
+    config_path = Path(__file__).parent / 'config.toml'
+    if not config_path.exists():
+        print(f"Error: Configuration file not found: {config_path}")
+        print("Please ensure config.toml exists")
+        sys.exit(1)
+
+    with open(config_path, 'rb') as f:
+        config = tomllib.load(f)
+
+    # Load .env.dw for secrets
+    env_path = Path(__file__).parent / ".env.dw"
+    load_dotenv(dotenv_path=env_path)
+
+    # Check for required secret
+    auth_token = os.getenv('DOUBLEWORD_AUTH_TOKEN')
+    if not auth_token:
+        print("="*60)
+        print("ERROR: DOUBLEWORD_AUTH_TOKEN not found")
+        print("="*60)
+        print("Please ensure you have:")
+        print("1. Created .env.dw file from .env.dw.sample")
+        print("2. Added your DOUBLEWORD_AUTH_TOKEN to .env.dw")
+        print("="*60)
+        sys.exit(1)
+
+    return config, auth_token
+
+config, auth_token = load_config()
 
 # Parse command line arguments
 parser = argparse.ArgumentParser(
@@ -22,8 +56,8 @@ parser.add_argument(
 parser.add_argument(
     '--output-dir',
     metavar='DIR',
-    default='../../dw_batch_output',
-    help='Output directory (default: ../../dw_batch_output)'
+    required=True,
+    help='Output directory (REQUIRED - agent must pass absolute path to project root)'
 )
 parser.add_argument(
     '--logs-dir',
@@ -33,43 +67,25 @@ parser.add_argument(
 
 args = parser.parse_args()
 
-# Load environment variables
-load_dotenv()
-
-# Security preflight check - verify required environment variables
-required_vars = ['DOUBLEWORD_AUTH_TOKEN', 'DOUBLEWORD_BASE_URL']
-missing_vars = [var for var in required_vars if not os.getenv(var)]
-
-if missing_vars:
-    print("="*60)
-    print("ERROR: Missing required environment variables")
-    print("="*60)
-    for var in missing_vars:
-        print(f"  ❌ {var}")
-    print()
-    print("Setup instructions:")
-    print("  1. Copy .env.sample to .env")
-    print("  2. Edit .env and add your DOUBLEWORD_AUTH_TOKEN")
-    print("  3. Ensure .env is in the same directory as this script")
-    print()
-    print("SECURITY: Never commit .env to git - it's in .gitignore")
-    print("="*60)
-    sys.exit(1)
+# Get config values
+base_url = config['api']['base_url']
+completion_window = config['batch']['completion_window']
+chat_endpoint = config['api']['chat_completions_endpoint']
 
 # Initialize client with Doubleword credentials
 client = OpenAI(
-    api_key=os.environ['DOUBLEWORD_AUTH_TOKEN'],
-    base_url=os.environ['DOUBLEWORD_BASE_URL']
+    api_key=auth_token,
+    base_url=base_url
 )
 
-# Print environment variables being used
+# Print configuration being used
 print("="*60)
 print("BATCH SUBMISSION")
 print("="*60)
-print(f"Doubleword API: {os.environ['DOUBLEWORD_BASE_URL']}")
-print(f"Auth Token: {'*' * 20}...{os.environ['DOUBLEWORD_AUTH_TOKEN'][-4:]}")
-print(f"Completion Window: {os.getenv('COMPLETION_WINDOW', '1h')}")
-print(f"Endpoint: {os.getenv('CHAT_COMPLETIONS_ENDPOINT', '/v1/chat/completions')}")
+print(f"Doubleword API: {base_url}")
+print(f"Auth Token: {'*' * 20}...{auth_token[-4:]}")
+print(f"Completion Window: {completion_window}")
+print(f"Endpoint: {chat_endpoint}")
 print("="*60)
 print()
 
@@ -118,11 +134,10 @@ print(f"✓ File uploaded successfully!")
 print(f"  File ID: {batch_file.id}")
 
 # Create batch job
-completion_window = os.getenv('COMPLETION_WINDOW', '1h')
 print(f"\nCreating batch job (completion window: {completion_window})...")
 batch = client.batches.create(
     input_file_id=batch_file.id,
-    endpoint=os.getenv('CHAT_COMPLETIONS_ENDPOINT', '/v1/chat/completions'),
+    endpoint=chat_endpoint,
     completion_window=completion_window
 )
 

@@ -9,7 +9,7 @@ USE THIS WHEN:
   ✓ No conditional logic needed
 
 CONFIGURATION:
-- Set DOUBLEWORD_EMBEDDING_MODEL in .env
+- Set DOUBLEWORD_EMBEDDING_MODEL in .env.dw
 - Use --extensions to filter file types
 - Use --chunk-size to split long documents (default: no chunking)
 
